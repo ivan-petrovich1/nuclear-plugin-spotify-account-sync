@@ -1,0 +1,15 @@
+{
+  "name": "nuclear-plugin-spotify-account-sync",
+  "version": "1.0.0",
+  "description": "Sync public Spotify profile playlists (and individual public playlist URLs) into Nuclear with no login or API keys required",
+  "author": "ivan-petrovich1",
+  "license": "AGPL-3.0-only",
+  "main": "index.tsx",
+  "type": "module",
+  "nuclear": {
+    "displayName": "Spotify Account Sync",
+    "category": "playlists",
+    "categories": ["playlists"],
+    "permissions": ["network"]
+  }
+}
