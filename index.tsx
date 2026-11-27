@@ -301,12 +301,24 @@ const runSync = async (
           : null;
 
         if (existingPlaylist) {
-          const oldItemIds = existingPlaylist.items.map((item) => item.id);
-          if (oldItemIds.length > 0) {
-            await api.Playlists.removeTracks(existingPlaylist.id, oldItemIds);
+          const trackSignature = (track: Track): string =>
+            `${track.title}\0${track.artists.map((a) => a.name).join(',')}`;
+          const existingSigs = existingPlaylist.items.map((item) =>
+            trackSignature(item.track),
+          );
+          const nextSigs = parsed.tracks.map(trackSignature);
+          const changed =
+            existingSigs.length !== nextSigs.length ||
+            nextSigs.some((sig, idx) => sig !== existingSigs[idx]);
+
+          if (changed) {
+            const oldItemIds = existingPlaylist.items.map((item) => item.id);
+            if (oldItemIds.length > 0) {
+              await api.Playlists.removeTracks(existingPlaylist.id, oldItemIds);
+            }
+            await api.Playlists.addTracks(existingPlaylist.id, parsed.tracks);
+            updatedCount++;
           }
-          await api.Playlists.addTracks(existingPlaylist.id, parsed.tracks);
-          updatedCount++;
         } else {
           const now = new Date().toISOString();
           const items: PlaylistItem[] = parsed.tracks.map((track) => ({
@@ -728,7 +740,7 @@ const SpotifySyncView: React.FC<{
   );
 };
 
-const registerSettingsAndUi = async (api: NuclearPluginAPI) => {
+const registerSettings = async (api: NuclearPluginAPI) => {
   await api.Settings.register([
     {
       id: SETTING_IDS.ACCOUNT_INPUT,
@@ -788,7 +800,9 @@ const registerSettingsAndUi = async (api: NuclearPluginAPI) => {
   ]);
 
   api.Settings.registerWidget(WIDGET_ID, () => <SpotifySyncWidget api={api} />);
+};
 
+const registerView = (api: NuclearPluginAPI) => {
   try {
     api.Views?.register({
       id: VIEW_ID,
@@ -822,11 +836,12 @@ const cleanupUi = (api: NuclearPluginAPI) => {
 
 const spotifyAccountSyncPlugin: NuclearPlugin = {
   async onLoad(api: NuclearPluginAPI) {
-    await registerSettingsAndUi(api);
+    await registerSettings(api);
   },
 
   async onEnable(api: NuclearPluginAPI) {
-    await registerSettingsAndUi(api);
+    await registerSettings(api);
+    registerView(api);
 
     if (!autoSyncAttemptedThisSession) {
       autoSyncAttemptedThisSession = true;
