@@ -394,7 +394,7 @@ const useSyncState = (api: NuclearPluginAPI) => {
             spotifyId,
             nuclearId,
             name: entry.name,
-            trackCount: entry.trackCount,
+            trackCount: entry.itemCount,
           });
         }
       }
